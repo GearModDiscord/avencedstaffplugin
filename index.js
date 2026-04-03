@@ -1,3 +1,4 @@
+// index.js
 const { Client, GatewayIntentBits, SlashCommandBuilder } = require("discord.js");
 const express = require("express");
 const fs = require("fs");
@@ -10,9 +11,8 @@ const APP_URL = process.env.APP_URL || "https://myxoteirtest-production.up.railw
 const app = express();
 app.use(express.json());
 
+// Load licenses from file
 let licenses = {};
-
-// Load existing licenses
 if (fs.existsSync("licenses.json")) {
     licenses = JSON.parse(fs.readFileSync("licenses.json"));
 }
@@ -27,20 +27,20 @@ function generateKey() {
     return crypto.randomBytes(8).toString("hex").toUpperCase();
 }
 
-/*
-LICENSE VERIFY ENDPOINT
-*/
+/* ----------------- LICENSE VERIFY ENDPOINT ----------------- */
 app.get("/verify", (req, res) => {
     const key = req.query.key;
-    const hwid = req.query.hwid || "default-hwid"; // fallback if not provided
+    const hwid = req.query.hwid || "default-hwid";
 
     if (!licenses[key]) return res.send("INVALID");
 
+    // Bind HWID on first use
     if (!licenses[key].hwid) {
-        licenses[key].hwid = hwid; // bind license to first HWID
+        licenses[key].hwid = hwid;
         saveLicenses();
     }
 
+    // Check if HWID matches
     if (licenses[key].hwid !== hwid) return res.send("INVALID");
 
     res.send(`VALID ✅ License for ${licenses[key].owner}`);
@@ -51,9 +51,7 @@ app.listen(process.env.PORT || 3000, () => {
     console.log("Express server running...");
 });
 
-/*
-DISCORD BOT
-*/
+/* ----------------- DISCORD BOT ----------------- */
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
@@ -100,7 +98,6 @@ client.on("interactionCreate", async interaction => {
         };
         saveLicenses();
 
-        // Send a fully clickable verification link
         const verifyLink = `${APP_URL}/verify?key=${key}&hwid=USER_HWID`;
 
         await interaction.reply(
