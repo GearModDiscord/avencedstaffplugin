@@ -5,21 +5,24 @@ const crypto = require("crypto");
 
 const TOKEN = process.env.TOKEN;
 const GUILD_ID = process.env.GUILD_ID;
-const APP_URL = process.env.APP_URL || "https://myxoteirtest-production.up.railway.app"; // Add your Railway app URL here
+const APP_URL = process.env.APP_URL || "https://myxoteirtest-production.up.railway.app";
 
 const app = express();
 app.use(express.json());
 
 let licenses = {};
 
+// Load existing licenses
 if (fs.existsSync("licenses.json")) {
     licenses = JSON.parse(fs.readFileSync("licenses.json"));
 }
 
+// Save licenses to file
 function saveLicenses() {
     fs.writeFileSync("licenses.json", JSON.stringify(licenses, null, 2));
 }
 
+// Generate random license key
 function generateKey() {
     return crypto.randomBytes(8).toString("hex").toUpperCase();
 }
@@ -29,22 +32,21 @@ LICENSE VERIFY ENDPOINT
 */
 app.get("/verify", (req, res) => {
     const key = req.query.key;
-    const hwid = req.query.hwid;
+    const hwid = req.query.hwid || "default-hwid"; // fallback if not provided
 
     if (!licenses[key]) return res.send("INVALID");
 
     if (!licenses[key].hwid) {
-        licenses[key].hwid = hwid;
+        licenses[key].hwid = hwid; // bind license to first HWID
         saveLicenses();
     }
 
-    if (licenses[key].hwid !== hwid) {
-        return res.send("INVALID");
-    }
+    if (licenses[key].hwid !== hwid) return res.send("INVALID");
 
-    res.send("VALID");
+    res.send(`VALID ✅ License for ${licenses[key].owner}`);
 });
 
+// Start Express server
 app.listen(process.env.PORT || 3000, () => {
     console.log("Express server running...");
 });
@@ -76,7 +78,6 @@ client.once("ready", async () => {
     ];
 
     const guild = client.guilds.cache.get(GUILD_ID);
-
     if (!guild) {
         console.log("Guild not found");
         return;
@@ -89,25 +90,22 @@ client.once("ready", async () => {
 client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.commandName === "license") {
-        if (interaction.options.getSubcommand() === "create") {
-            const owner = interaction.options.getString("user");
-            const key = generateKey();
+    if (interaction.commandName === "license" && interaction.options.getSubcommand() === "create") {
+        const owner = interaction.options.getString("user");
+        const key = generateKey();
 
-            licenses[key] = {
-                owner: owner,
-                hwid: null
-            };
+        licenses[key] = {
+            owner: owner,
+            hwid: null // will bind on first verification
+        };
+        saveLicenses();
 
-            saveLicenses();
+        // Send a fully clickable verification link
+        const verifyLink = `${APP_URL}/verify?key=${key}&hwid=USER_HWID`;
 
-            const verifyLink = `${APP_URL}/verify?key=${key}&hwid=YOUR_HWID_HERE`;
-            // Note: "YOUR_HWID_HERE" should be replaced with actual HWID when the user verifies
-
-            await interaction.reply(
-                `✅ License created\nOwner: ${owner}\nKey: ${key}\nVerify here: ${verifyLink}`
-            );
-        }
+        await interaction.reply(
+            `✅ License created\n**Owner:** ${owner}\n**Key:** ${key}\n**Verify Here:** ${verifyLink}\n\n*Replace USER_HWID with your actual HWID if needed*`
+        );
     }
 });
 
