@@ -5,6 +5,7 @@ const crypto = require("crypto");
 
 const TOKEN = process.env.TOKEN;
 const GUILD_ID = process.env.GUILD_ID;
+const APP_URL = process.env.APP_URL || "https://myxoteirtest-production.up.railway.app"; // Add your Railway app URL here
 
 const app = express();
 app.use(express.json());
@@ -24,11 +25,9 @@ function generateKey() {
 }
 
 /*
-LICENSE VERIFY ENDPOINT FOR YOUR MINECRAFT PLUGIN
+LICENSE VERIFY ENDPOINT
 */
-
 app.get("/verify", (req, res) => {
-
     const key = req.query.key;
     const hwid = req.query.hwid;
 
@@ -44,26 +43,23 @@ app.get("/verify", (req, res) => {
     }
 
     res.send("VALID");
-
 });
 
-app.listen(process.env.PORT || 3000);
-
+app.listen(process.env.PORT || 3000, () => {
+    console.log("Express server running...");
+});
 
 /*
 DISCORD BOT
 */
-
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
 
 client.once("ready", async () => {
-
     console.log("License bot online");
 
     const commands = [
-
         new SlashCommandBuilder()
             .setName("license")
             .setDescription("License manager")
@@ -77,7 +73,6 @@ client.once("ready", async () => {
                             .setRequired(true)
                     )
             )
-
     ];
 
     const guild = client.guilds.cache.get(GUILD_ID);
@@ -88,22 +83,15 @@ client.once("ready", async () => {
     }
 
     await guild.commands.set(commands);
-
     console.log("Slash commands registered");
-
 });
 
-
 client.on("interactionCreate", async interaction => {
-
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === "license") {
-
         if (interaction.options.getSubcommand() === "create") {
-
             const owner = interaction.options.getString("user");
-
             const key = generateKey();
 
             licenses[key] = {
@@ -113,14 +101,14 @@ client.on("interactionCreate", async interaction => {
 
             saveLicenses();
 
+            const verifyLink = `${APP_URL}/verify?key=${key}&hwid=YOUR_HWID_HERE`;
+            // Note: "YOUR_HWID_HERE" should be replaced with actual HWID when the user verifies
+
             await interaction.reply(
-                `✅ License created\nOwner: ${owner}\nKey: ${key}`
+                `✅ License created\nOwner: ${owner}\nKey: ${key}\nVerify here: ${verifyLink}`
             );
-
         }
-
     }
-
 });
 
 client.login(TOKEN);
