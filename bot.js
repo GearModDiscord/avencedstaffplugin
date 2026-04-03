@@ -4,7 +4,7 @@ const express = require("express");
 const fs = require("fs");
 const crypto = require("crypto");
 
-const TOKEN = process.env.BOT_TOKEN;
+const TOKEN = process.env.TOKEN;
 
 const app = express();
 app.use(express.json());
