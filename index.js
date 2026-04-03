@@ -1,4 +1,3 @@
-// index.js
 const { Client, GatewayIntentBits, SlashCommandBuilder } = require("discord.js");
 const express = require("express");
 const fs = require("fs");
@@ -11,13 +10,13 @@ const APP_URL = process.env.APP_URL || "https://myxoteirtest-production.up.railw
 const app = express();
 app.use(express.json());
 
-// Load licenses from file
+// Load existing licenses
 let licenses = {};
 if (fs.existsSync("licenses.json")) {
     licenses = JSON.parse(fs.readFileSync("licenses.json"));
 }
 
-// Save licenses to file
+// Save licenses
 function saveLicenses() {
     fs.writeFileSync("licenses.json", JSON.stringify(licenses, null, 2));
 }
@@ -34,13 +33,11 @@ app.get("/verify", (req, res) => {
 
     if (!licenses[key]) return res.send("INVALID");
 
-    // Bind HWID on first use
     if (!licenses[key].hwid) {
         licenses[key].hwid = hwid;
         saveLicenses();
     }
 
-    // Check if HWID matches
     if (licenses[key].hwid !== hwid) return res.send("INVALID");
 
     res.send(`VALID ✅ License for ${licenses[key].owner}`);
@@ -52,9 +49,7 @@ app.listen(process.env.PORT || 3000, () => {
 });
 
 /* ----------------- DISCORD BOT ----------------- */
-const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
-});
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.once("ready", async () => {
     console.log("License bot online");
@@ -92,10 +87,7 @@ client.on("interactionCreate", async interaction => {
         const owner = interaction.options.getString("user");
         const key = generateKey();
 
-        licenses[key] = {
-            owner: owner,
-            hwid: null // will bind on first verification
-        };
+        licenses[key] = { owner: owner, hwid: null };
         saveLicenses();
 
         const verifyLink = `${APP_URL}/verify?key=${key}&hwid=USER_HWID`;
