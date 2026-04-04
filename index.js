@@ -66,7 +66,7 @@ client.on("interactionCreate", async interaction => {
 `✅ New license created:
 Owner: ${owner}
 Key: ${newKey}
-Verify Link: https://YOUR_RAILWAY_URL/verify?key=${newKey}&hwid=${hwid}`, ephemeral: true });
+Verify Link: https://myxoteirtest-production.up.railway.app/verify?key=${newKey}&hwid=${hwid}`, ephemeral: true });
             break;
         }
         case "license-revoke":
