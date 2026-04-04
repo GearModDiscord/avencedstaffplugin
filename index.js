@@ -85,7 +85,7 @@ Key: ${key}
 HWID: ${info.hwid}
 Active: ${info.active}
 Created: ${new Date(info.createdAt).toLocaleString()}
-Verify Link: https://YOUR_RAILWAY_URL/verify?key=${key}&hwid=${info.hwid}`, ephemeral: true });
+Verify Link: https://myxoteirtest-production.up.railway.app/verify?key=${key}&hwid=${info.hwid}`, ephemeral: true });
             break;
     }
 });
