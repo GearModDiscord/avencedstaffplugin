@@ -14,14 +14,22 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Parse query params for /verify
 app.get("/verify", (req, res) => {
-    const key = req.query.key;
-    const hwid = req.query.hwid;
-    const licenses = JSON.parse(fs.readFileSync(FILE));
+    try {
+        const key = req.query.key;
+        const hwid = req.query.hwid;
 
-    if (licenses[key] && licenses[key].active && licenses[key].hwid.equals(hwid)) {
-        return res.send("VALID");
-    } else {
-        return res.send("INVALID");
+        if (!key || !hwid) return res.status(400).send("Missing key or hwid");
+
+        const licenses = JSON.parse(fs.readFileSync(FILE));
+
+        if (licenses[key] && licenses[key].active && licenses[key].hwid === hwid) {
+            return res.send("VALID");
+        } else {
+            return res.send("INVALID");
+        }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send("Internal Server Error");
     }
 });
 
