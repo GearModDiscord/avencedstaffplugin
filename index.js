@@ -29,7 +29,9 @@ function generateKey() {
 /* ----------------- LICENSE VERIFY ENDPOINT ----------------- */
 app.get("/verify", (req, res) => {
     const key = req.query.key;
-    const hwid = req.query.hwid || "default-hwid";
+    const hwid = req.query.hwid;
+
+    if (!key || !hwid) return res.send("INVALID");
 
     if (!licenses[key]) return res.send("INVALID");
 
@@ -90,11 +92,18 @@ client.on("interactionCreate", async interaction => {
         licenses[key] = { owner: owner, hwid: null };
         saveLicenses();
 
+        // Generate the direct verification link
         const verifyLink = `${APP_URL}/verify?key=${key}&hwid=USER_HWID`;
 
         await interaction.reply(
-            `✅ License created\n**Owner:** ${owner}\n**Key:** ${key}\n**Verify Here:** ${verifyLink}\n\n*Replace USER_HWID with your actual HWID if needed*`
+            `✅ License created\n**Owner:** ${owner}\n**Key:** ${key}\n**Verify Link:** ${verifyLink}\n\n*Replace USER_HWID with your actual HWID if needed*`
         );
+
+        // Optional: send the link directly to you as the bot owner
+        const ownerUser = await client.users.fetch(interaction.user.id);
+        if (ownerUser) {
+            ownerUser.send(`New license created:\nOwner: ${owner}\nKey: ${key}\nVerify Link: ${verifyLink}`);
+        }
     }
 });
 
